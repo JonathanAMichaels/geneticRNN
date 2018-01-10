@@ -15,7 +15,7 @@
 clear
 close all
 
-numConds = 8; % Number of peripheral targets. Try changing this number to alter the difficulty!
+numConds = 4; % Number of peripheral targets. Try changing this number to alter the difficulty!
 totalTime = 50; % Total trial time
 moveTime = 25;
 L = [3 3]; % Length of each segment of the arm
@@ -44,7 +44,7 @@ end
 % specified by the input.
 
 %% Initialize network parameters
-N = 50; % Number of neurons
+N = 100; % Number of neurons
 B = size(targ{1},1); % Outputs
 I = size(inp{1},1); % Inputs
 p = 1; % Sparsity
@@ -76,7 +76,7 @@ policyInitFun = @geneticRNN_create_model;
     'targetFun', targetFun, 'targetFunPassthrough', targetFunPassthrough);
 
 % run model
-[Z0, Z1, R, dR, X, kin] = geneticRNN_run_model(net(1), 'input', inp, 'targetFun', targetFun, 'targetFunPassthrough', targetFunPassthrough);
+[Z0, Z1, R, X, kin] = geneticRNN_run_model(net(1), 'input', inp, 'targetFun', targetFun, 'targetFunPassthrough', targetFunPassthrough);
 
 
 

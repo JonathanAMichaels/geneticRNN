@@ -155,7 +155,7 @@ end
 errStats.fitness = []; errStats.generation = []; % Initialize error statistics
 g = 1;
 previousGen = [];
-decay = 1;
+decay = 0.99
 
 %% Main Program %%
 % Runs until tolerated error is met or stop button is pressed
@@ -168,8 +168,6 @@ while UIButton.Value == 0
     bigZ1 = cell(1,populationSize);
     net = repmat(struct('I',0,'B',0,'N',0,'p',0,'g',0,'J',0,'netNoiseSigma',0,'dt',0,'tau',0,'wIn',0,'wFb',0,'wOut',0,'bJ',0,'bOut',0,'x0',0,'actFun',0,'actFunDeriv',0,'energyCost',0), ...
     1, populationSize);
-
-    decay2 = mutationPower * 1e-1;
     parfor i = 1:populationSize
         if g == 1
             % Generate new networks
@@ -190,22 +188,6 @@ while UIButton.Value == 0
                 net(i).bJ = (net(i).bJ + (randn(size(net(i).bJ)) * mutationPower .* (net(i).bJ ~= 0))) .* (decay * ones(size(net(i).bJ)));
                 net(i).bOut = (net(i).bOut + (randn(size(net(i).bOut)) * mutationPower .* (net(i).bOut ~= 0))) .* (decay * ones(size(net(i).bOut)));
                 net(i).x0 = (net(i).x0 + (randn(size(net(i).x0)) * mutationPower .* (net(i).x0 ~= 0))) .* (decay * ones(size(net(i).x0)));
-%                 
-                net(i).wIn = net(i).wIn - decay2*(net(i).wIn-decay2 > 0) + decay2*(net(i).wIn+decay2 < 0);
-                net(i).wFb = net(i).wFb - decay2*(net(i).wFb-decay2 > 0) + decay2*(net(i).wFb+decay2 < 0);
-                net(i).wOut = net(i).wOut - decay2*(net(i).wOut-decay2 > 0) + decay2*(net(i).wOut+decay2 < 0);
-                net(i).J = net(i).J - decay2*(net(i).J-decay2 > 0) + decay2*(net(i).J+decay2 < 0);
-                net(i).bJ = net(i).bJ - decay2*(net(i).bJ-decay2 > 0) + decay2*(net(i).bJ+decay2 < 0);
-                net(i).bOut = net(i).bOut - decay2*(net(i).bOut-decay2 > 0) + decay2*(net(i).bOut+decay2 < 0);
-                net(i).x0 = net(i).x0 - decay2*(net(i).x0-decay2 > 0) + decay2*(net(i).x0+decay2 < 0);
-                
-%                 net(i).wIn(abs(net(i).wIn) <= decay2) = 0;
-%                 net(i).wFb(abs(net(i).wFb) <= decay2) = 0;
-%                 net(i).wOut(abs(net(i).wOut) <= decay2) = 0;
-%                 net(i).J(abs(net(i).J) <= decay2) = 0;
-%                 net(i).bJ(abs(net(i).bJ) <= decay2) = 0;
-%                 net(i).bOut(abs(net(i).bOut) <= decay2) = 0;
-%                 net(i).x0(abs(net(i).x0) <= decay2) = 0;
             end
         end
         
@@ -271,7 +253,7 @@ toc
 %% Default plotting function
     function defaultPlottingFunction(plotStats, errStats, evalOptions)
         if evalOptions(1) >= 0
-            disp(['Generation: ' num2str(plotStats.generation) '  Fitness: ' num2str(mean(plotStats.fitness(:,1))) '  Mutation Power: ' num2str(plotStats.mutationPower)])
+            disp(['Fitness: ' num2str(mean(plotStats.fitness(:,1))) '  Mutation Power: ' num2str(plotStats.mutationPower)])
         end
         if evalOptions(1) >= 1
             figure(98)
@@ -316,6 +298,7 @@ toc
     end
 
     function fitness = defaultFitnessFunction(J, Z0, Z1, dR, targ)
+        
         fitness = zeros(1,length(Z1));
         for cond = 1:length(Z1)
             ind = ~isnan(targ{cond});

@@ -102,27 +102,29 @@ net.wIn = randn(N,I) / sqrt(I);
 %% Initialize feedback weights
 net.wFb = zeros(N,B);
 if feedback
-    net.wFb = randn(N,B) / sqrt(B);
+    net.wFb = randn(N,B) / sqrt(N);
 end
 
 %% Initialize output weights
 net.wOut = randn(B,N) / sqrt(N);
 
 %% Initialize J biases
-net.bJ = randn(N,1) / sqrt(N);
+net.bJ = randn(N,1) / 1e6;
 
 %% Initialize output biases
-net.bOut = randn(B,1) / sqrt(B);
+net.bOut = randn(B,1) / 1e6;
 
 %% Initialize starting activation
-net.x0 = randn(N,1) / sqrt(N);
+net.x0 = randn(N,1) / 1e6;
 
 %% Activation function
 switch actFunType
     case 'tanh'
         net.actFun = @tanh;
+        net.actFunDeriv = @(r) 1.0-r.^2;
     case 'recttanh'
         net.actFun = @(x) (x > 0) .* tanh(x);
+        net.actFunDeriv = @(r) (r > 0) .* (1.0 - r.^2);
     case 'baselinetanh' % Similar to Rajan et al. (2010)
         net.actFun = @(x) (x > 0) .* (1 - 0.1) .* tanh(x / (1 - 0.1)) ...
             + (x <= 0) .* 0.1 .* tanh(x / 0.1);

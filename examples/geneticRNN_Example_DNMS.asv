@@ -33,15 +33,15 @@ for type = 1:4
         targ{type} = [nan(1, checkTime(1)-1) ones(1, totalTime-checkTime(1)+1)]*target1;
     elseif type == 2
         inp{type}(2, [cue1Time cue2Time]) = level;
-        targ{type} = [nan(1, checkTime(1)-1) ones(1, totalTime-checkTime(1)+1)]*target1;
+        targ{type} = [nan(1, cue2Time(end)) ones(1, totalTime-cue2Time(end))]*target1;
     elseif type == 3
         inp{type}(1, cue1Time) = level;
         inp{type}(2, cue2Time) = level;
-        targ{type} = [nan(1, checkTime(1)-1) ones(1, totalTime-checkTime(1)+1)]*target2;
+        targ{type} = [nan(1, cue2Time(end)) ones(1, totalTime-cue2Time(end))]*target2;
     elseif type == 4
         inp{type}(2, cue1Time) = level;
         inp{type}(1, cue2Time) = level;
-        targ{type} = [nan(1, checkTime(1)-1) ones(1, totalTime-checkTime(1)+1)]*target2;
+        targ{type} = [nan(1, cue2Time(end)) ones(1, totalTime-cue2Time(end))]*target2;
     end
 end
 % In the delayed nonmatch-to-sample task the network receives two temporally
