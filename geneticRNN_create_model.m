@@ -1,4 +1,4 @@
-function net = geneticRNN_create_model(N, B, I, p, g, dt, tau, varargin)
+function net = geneticRNN_create_model(policyInitInputs, varargin)
 
 % net = geneticRNN_create_model(N, B, I, p, g, dt, tau, varargin)
 %
@@ -50,6 +50,18 @@ function net = geneticRNN_create_model(N, B, I, p, g, dt, tau, varargin)
 % Stanford University
 % jonathanamichaels AT gmail DOT com
 
+
+N = policyInitInputs{1};
+B = policyInitInputs{2};
+I = policyInitInputs{3};
+p = policyInitInputs{4};
+g = policyInitInputs{5};
+dt = policyInitInputs{6};
+tau = policyInitInputs{7};
+
+if ~isempty(varargin)
+    varargin = varargin{1};
+end
 
 actFunType = 'tanh'; % Default activation function
 netNoiseSigma = 0.0; % Default noise-level

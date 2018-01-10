@@ -61,15 +61,14 @@ dt = 1; % Time step
 tau = 10; % Time constant
 
 %% Initialize learning parameters
-systemNoise = 0.0; % Network noise level
 evalOpts = [2 1]; % Plotting level and frequency of evaluation
 
-policyInitInputs = {N, B, I, p, g, dt, tau, systemNoise, true, 'tanh', 0.1};
+policyInitInputs = {N, B, I, p, g, dt, tau};
+policyInitInputsOptional = {'feedback', true, 'actFun', 'tanh'};
 
 mutationPower = 5e-2;
-populationSize = 3000;
-truncationSize = 400;
-fitnessFun = @geneticRNN_fitness;
+populationSize = 2000;
+truncationSize = 100;
 fitnessFunInputs = targ;
 policyInitFun = @geneticRNN_create_model;
 
@@ -77,9 +76,10 @@ policyInitFun = @geneticRNN_create_model;
 % This step should take about 5 minutes, depending on your processor.
 % Can be stopped at any time by pressing the STOP button.
 % Look inside to see information about the many optional parameters.
-[net, learnStats] = geneticRNN_learn_model(mutationPower, populationSize, truncationSize, fitnessFun, fitnessFunInputs, policyInitFun, policyInitInputs, ...
+[net, learnStats] = geneticRNN_learn_model_2(mutationPower, populationSize, truncationSize, fitnessFunInputs, policyInitInputs, ...
     'input', inp, ...
-    'evalOpts', evalOpts);
+    'evalOpts', evalOpts, ...
+    'policyInitInputsOptional', policyInitInputsOptional);
 
 %% Run network
 [Z0, Z1, R, dR, X, kin] = geneticRNN_run_model(net(1), 'input', inp);

@@ -33,15 +33,15 @@ for type = 1:4
         targ{type} = [nan(1, checkTime(1)-1) ones(1, totalTime-checkTime(1)+1)]*target1;
     elseif type == 2
         inp{type}(2, [cue1Time cue2Time]) = level;
-        targ{type} = [nan(1, cue2Time(end)) ones(1, totalTime-cue2Time(end))]*target1;
+        targ{type} = [nan(1, checkTime(1)-1) ones(1, totalTime-checkTime(1)+1)]*target1;
     elseif type == 3
         inp{type}(1, cue1Time) = level;
         inp{type}(2, cue2Time) = level;
-        targ{type} = [nan(1, cue2Time(end)) ones(1, totalTime-cue2Time(end))]*target2;
+        targ{type} = [nan(1, checkTime(1)-1) ones(1, totalTime-checkTime(1)+1)]*target2;
     elseif type == 4
         inp{type}(2, cue1Time) = level;
         inp{type}(1, cue2Time) = level;
-        targ{type} = [nan(1, cue2Time(end)) ones(1, totalTime-cue2Time(end))]*target2;
+        targ{type} = [nan(1, checkTime(1)-1) ones(1, totalTime-checkTime(1)+1)]*target2;
     end
 end
 % In the delayed nonmatch-to-sample task the network receives two temporally
@@ -77,9 +77,10 @@ policyInitFun = @geneticRNN_create_model;
 % This step should take about 5 minutes, depending on your processor.
 % Can be stopped at any time by pressing the STOP button.
 % Look inside to see information about the many optional parameters.
-[net, learnStats] = geneticRNN_learn_model(mutationPower, populationSize, truncationSize, fitnessFun, fitnessFunInputs, policyInitFun, policyInitInputs, ...
+[net, learnStats] = geneticRNN_learn_model_2(mutationPower, populationSize, truncationSize, fitnessFunInputs, policyInitInputs, ...
     'input', inp, ...
-    'evalOpts', evalOpts);
+    'evalOpts', evalOpts, ...
+    'policyInitInputsOptional', policyInitInputsOptional);
 
 %% Run network
 [Z0, Z1, R, dR, X, kin] = geneticRNN_run_model(net(1), 'input', inp);

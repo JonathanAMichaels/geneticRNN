@@ -1,4 +1,4 @@
-function [winner, varargout] = geneticRNN_learn_model(mutationPower, populationSize, truncationSize, fitnessFun, fitnessFunInputs, policyInitFun, policyInitInputs, varargin)
+function [winner, varargout] = geneticRNN_learn_model(mutationPower, populationSize, truncationSize, fitnessFunInputs, policyInitInputs, varargin)
 
 % net = hebbRNN_learn_model(x0, net, F, perturbProb, eta, varargin)
 %
@@ -119,8 +119,10 @@ mutationPowerDrop = 0.7;
 targetFun = @defaultTargetFunction; % Default output function (native)
 plotFun = @defaultPlottingFunction; % Default plotting function (native)
 fitnessFun = @defaultFitnessFunction; % Default fitness function (native)
+policyInitFun = @geneticRNN_create_model;
+policyInitInputsOptional = [];
 targetFunPassthrough = []; % Default passthrough to output function
-evalOpts = [0 50]; % Default evaluation values [plottingOptions evaluateEveryXIterations]
+evalOpts = [1 1]; % Default evaluation values [plottingOptions evaluateEveryXIterations]
 
 for iVar = 1:2:optargin
     switch varargin{iVar}
@@ -132,6 +134,13 @@ for iVar = 1:2:optargin
             mutationPowerDecay = varargin{iVar+1};
         case 'mutationPowerDrop'
             mutationPowerDrop = varargin{iVar+1};
+            
+        case 'fitnessFun'
+            fitnessFun = varargin{iVar+1};
+        case 'policyInitFun'
+            policyInitFun = varargin{iVar+1};
+        case 'policyInitInputsOptional'
+            policyInitInputsOptional = varargin{iVar+1};
             
         case 'targetFun'
             targetFun = varargin{iVar+1};
@@ -145,9 +154,6 @@ for iVar = 1:2:optargin
             evalOpts = varargin{iVar+1};
     end
 end
-
-%% Save options to network structure for posterity
-%
 
 %% Checks
 % The input can be either empty, or specified at each time point by the user.
@@ -163,6 +169,7 @@ figure(97)
 set(gcf, 'Position', [0 0 100 50], 'MenuBar', 'none', 'ToolBar', 'none', 'Name', 'Stop', 'NumberTitle', 'off')
 UIButton = uicontrol('Style', 'togglebutton', 'String', 'STOP', 'Position', [0 0 100 50], 'FontSize', 25);
 while UIButton.Value == 0
+    tic
     fitness = zeros(length(inp),populationSize);
     bigR = cell(1,populationSize);
     bigZ1 = cell(1,populationSize);
@@ -173,9 +180,7 @@ while UIButton.Value == 0
     parfor i = 1:populationSize
         if g == 1
             % Generate new networks
-            net(i) = policyInitFun(policyInitInputs{1}, policyInitInputs{2}, policyInitInputs{3}, ...
-                policyInitInputs{4}, policyInitInputs{5}, policyInitInputs{6}, policyInitInputs{7}, ...
-                'netNoiseSigma', policyInitInputs{8}, 'feedback', policyInitInputs{9}, 'actFun', policyInitInputs{10}, 'energyCost', policyInitInputs{11});
+            net(i) = policyInitFun(policyInitInputs, policyInitInputsOptional);
         else
             if i == 1
                 net(i) = previousGen(1);
@@ -248,6 +253,7 @@ while UIButton.Value == 0
     previousGen = net(1:truncationSize);
     mutationPower = mutationPower * mutationPowerDecay;
     g = g + 1;
+    toc
 end
 
 
@@ -261,12 +267,6 @@ winner = previousGen(1);
 
 disp('Training time required:')
 toc
-
-
-%% Default output function
-    function [z, targetFeedforward] = defaultTargetFunction(~, r, ~, targetFeedforward)
-        z = r; % Just passes firing rate
-    end
 
 %% Default plotting function
     function defaultPlottingFunction(plotStats, errStats, evalOptions)

@@ -1,12 +1,10 @@
-# hebbRNN: A Reward-Modulated Hebbian Learning Rule for Recurrent Neural Networks
+# geneticRNN: Implementation of simple genetic training algorithm for recurrent neural networks
 
-**Authors:** [Jonathan A. Michaels](http://www.jmichaels.me/) & [Hansjörg Scherberger](http://www.dpz.eu/en/unit/neurobiology.html)
+**Authors:** [Jonathan A. Michaels](http://www.jmichaels.me/)
 
-**Version:** 1.3
+**Version:** 1.0
 
-**Date:** 23.09.2016
-
-[![DOI](http://joss.theoj.org/papers/10.21105/joss.00060/status.svg)](http://dx.doi.org/10.21105/joss.00060)
+**Date:** 09.01.2018
 
 ## What is hebbRNN?
 
@@ -22,13 +20,13 @@ All functions are documented throughout, and two examples illustrating the inten
 
 In the delayed nonmatch-to-sample task the network receives two temporally separated inputs. Each input lasts 200ms and there is a 200ms gap between them. The goal of the task is to respond with one value if the inputs were identical, and a different value if they were not. This response must be independent of the order of the signals and therefore requires the network to remember the first input!
 
-related file: hebbRNN_Example_DNMS.m
+related file: geneticRNN_Example_DNMS.m
 
 ### Example: a center-out reaching task
 
 In the center-out reaching task the network needs to produce the joint angle velocities of a two-segment arm to reach to a number of peripheral targets spaced along a circle in the 2D plane, based on the desired target specified by the input.
 
-related file: hebbRNN_Example_CO.m
+related file: geneticRNN_Example_CO.m
 
 
 ## Installation Instructions
@@ -38,7 +36,7 @@ To install the package, simply add all folders and subfolders to the Matlab path
 
 ### Dependencies
 
-The hebbRNN repository has no dependencies beyond built-in Matlab functions.
+The geneticRNN repository has no dependencies beyond built-in Matlab functions.
 
 
 ## Citation

@@ -1,4 +1,4 @@
-function [winner, varargout] = geneticRNN_learn_model(mutationPower, populationSize, truncationSize, fitnessFun, fitnessFunInputs, policyInitFun, policyInitInputs, varargin)
+function [winner, varargout] = geneticRNN_learn_model(mutationPower, populationSize, truncationSize, fitnessFunInputs, policyInitInputs, varargin)
 
 % net = hebbRNN_learn_model(x0, net, F, perturbProb, eta, varargin)
 %
@@ -116,11 +116,15 @@ optargin = size(varargin,2);
 inp = []; % Default inputs
 mutationPowerDecay = 0.99;
 mutationPowerDrop = 0.7;
+weightCompression = true;
+weightDecay = false;
 targetFun = @defaultTargetFunction; % Default output function (native)
 plotFun = @defaultPlottingFunction; % Default plotting function (native)
 fitnessFun = @defaultFitnessFunction; % Default fitness function (native)
+policyInitFun = @geneticRNN_create_model;
+policyInitInputsOptional = [];
 targetFunPassthrough = []; % Default passthrough to output function
-evalOpts = [0 50]; % Default evaluation values [plottingOptions evaluateEveryXIterations]
+evalOpts = [1 1]; % Default evaluation values [plottingOptions evaluateEveryXIterations]
 
 for iVar = 1:2:optargin
     switch varargin{iVar}
@@ -132,6 +136,18 @@ for iVar = 1:2:optargin
             mutationPowerDecay = varargin{iVar+1};
         case 'mutationPowerDrop'
             mutationPowerDrop = varargin{iVar+1};
+            
+        case 'weightCompression'
+            weightCompression = varargin{iVar+1};
+        case 'weightDecay'
+            weightDecay = varargin{iVar+1};
+            
+        case 'fitnessFun'
+            fitnessFun = varargin{iVar+1};
+        case 'policyInitFun'
+            policyInitFun = varargin{iVar+1};
+        case 'policyInitInputsOptional'
+            policyInitInputsOptional = varargin{iVar+1};
             
         case 'targetFun'
             targetFun = varargin{iVar+1};
@@ -154,9 +170,9 @@ end
 
 errStats.fitness = []; errStats.generation = []; % Initialize error statistics
 g = 1;
-previousGen = [];
-decay = 1;%0.95;
-decay2 = 1e-4;
+allDecay1 = [];
+allDecay2 = [];
+allMutationPower = [];
 
 %% Main Program %%
 % Runs until tolerated error is met or stop button is pressed
@@ -164,81 +180,77 @@ figure(97)
 set(gcf, 'Position', [0 0 100 50], 'MenuBar', 'none', 'ToolBar', 'none', 'Name', 'Stop', 'NumberTitle', 'off')
 UIButton = uicontrol('Style', 'togglebutton', 'String', 'STOP', 'Position', [0 0 100 50], 'FontSize', 25);
 while UIButton.Value == 0
-    fitness = zeros(length(inp),populationSize);
-    bigR = cell(1,populationSize);
-    bigZ1 = cell(1,populationSize);
-    net = repmat(struct('I',0,'B',0,'N',0,'p',0,'g',0,'J',0,'netNoiseSigma',0,'dt',0,'tau',0,'wIn',0,'wFb',0,'wOut',0,'bJ',0,'bOut',0,'x0',0,'actFun',0,'actFunDeriv',0,'energyCost',0), ...
-    1, populationSize);
-    for i = 1:populationSize
-        if g == 1
-            % Generate new networks
-            net(i) = policyInitFun(policyInitInputs{1}, policyInitInputs{2}, policyInitInputs{3}, ...
-                policyInitInputs{4}, policyInitInputs{5}, policyInitInputs{6}, policyInitInputs{7}, ...
-                'netNoiseSigma', policyInitInputs{8}, 'feedback', policyInitInputs{9}, 'actFun', policyInitInputs{10}, 'energyCost', policyInitInputs{11});
-        else
-            if i == 1
-                net(i) = previousGen(1);
-            else
-                k = randsample(truncationSize, 1);
-                net(i) = previousGen(k);
-                
-                net(i).wIn = (net(i).wIn + (randn(size(net(i).wIn)) * mutationPower .* (net(i).wIn ~= 0))) .* (decay * ones(size(net(i).wIn)));
-                net(i).wFb = (net(i).wFb + (randn(size(net(i).wFb)) * mutationPower .* (net(i).wFb ~= 0))) .* (decay * ones(size(net(i).wFb)));
-                net(i).wOut = (net(i).wOut + (randn(size(net(i).wOut)) * mutationPower .* (net(i).wOut ~= 0))) .* (decay * ones(size(net(i).wOut)));
-                net(i).J = (net(i).J + (randn(size(net(i).J)) * mutationPower .* (net(i).J ~= 0))) .* (decay * ones(size(net(i).J)));
-                net(i).bJ = (net(i).bJ + (randn(size(net(i).bJ)) * mutationPower .* (net(i).bJ ~= 0))) .* (decay * ones(size(net(i).bJ)));
-                net(i).bOut = (net(i).bOut + (randn(size(net(i).bOut)) * mutationPower .* (net(i).bOut ~= 0))) .* (decay * ones(size(net(i).bOut)));
-                net(i).x0 = (net(i).x0 + (randn(size(net(i).x0)) * mutationPower .* (net(i).x0 ~= 0))) .* (decay * ones(size(net(i).x0)));
-                
-                net(i).wIn = net(i).wIn - decay2*(net(i).wIn-decay2 > 0) + decay2*(net(i).wIn+decay2 < 0);
-                net(i).wFb = net(i).wFb - decay2*(net(i).wFb-decay2 > 0) + decay2*(net(i).wFb+decay2 < 0);
-                net(i).wOut = net(i).wOut - decay2*(net(i).wOut-decay2 > 0) + decay2*(net(i).wOut+decay2 < 0);
-                net(i).J = net(i).J - decay2*(net(i).J-decay2 > 0) + decay2*(net(i).J+decay2 < 0);
-                net(i).bJ = net(i).bJ - decay2*(net(i).bJ-decay2 > 0) + decay2*(net(i).bJ+decay2 < 0);
-                net(i).bOut = net(i).bOut - decay2*(net(i).bOut-decay2 > 0) + decay2*(net(i).bOut+decay2 < 0);
-                net(i).x0 = net(i).x0 - decay2*(net(i).x0-decay2 > 0) + decay2*(net(i).x0+decay2 < 0);
-            end
-        end
-        
-        % Run model
-        [Z0, Z1, R, dR, ~] = geneticRNN_run_model(net(i), 'input', inp, 'targetFun', targetFun, 'targetFunPassthrough', targetFunPassthrough);
-        % Assess fitness
-        fitness(:,i) = fitnessFun(net(i).J, Z0, Z1, dR, fitnessFunInputs);
-        
-        bigZ1{i} = Z1;
-        bigR{i} = R;
-    end
-    [~, sortInd] = sort(mean(fitness,1), 'descend');
-    net = net(sortInd);
-    fitness = fitness(:,sortInd(1:truncationSize));
-    bigZ1 = bigZ1{sortInd(1)};
-    bigR = bigR{sortInd(1)};
     
-    if sortInd(1) == 1
-        mutationPower = mutationPower * mutationPowerDrop;
+    tic
+    fitness = zeros(length(inp),populationSize);
+    
+    if weightCompression
+        decay1 = 1 - mutationPower;
+    else
+        decay1 = 1;
     end
+    decay2 = mutationPower * 1e-1;
+    
+    theseSeeds = randsample(1e8, populationSize);
+    if g > 1
+        previousSeeds = masterSeeds(randsample(size(masterSeeds,1), populationSize, true), :);
+        previousSeeds(1,:) = masterSeeds(1,:);
+        theseSeeds(1) = nan;
+        sendSeeds = [previousSeeds, theseSeeds];
+    else
+        sendSeeds = theseSeeds;
+    end
+    allDecay1 = cat(2, allDecay1, decay1);
+    allDecay2 = cat(2, allDecay2, decay2);
+    allMutationPower = cat(2, allMutationPower, mutationPower);
+    
+    parfor i = 1:populationSize
+        net = geneticRNN_rollout_model(policyInitFun, policyInitInputs, policyInitInputsOptional, allMutationPower, allDecay1, allDecay2, weightDecay, sendSeeds(i,:));
+        % Run model
+        [Z0, Z1, ~, dR, ~] = geneticRNN_run_model(net, 'input', inp, 'targetFun', targetFun, 'targetFunPassthrough', targetFunPassthrough);
+        % Assess fitness
+        fitness(:,i) = fitnessFun(net.J, Z0, Z1, dR, fitnessFunInputs);    
+    end
+    
+    [~, sortInd] = sort(mean(fitness,1), 'descend');
+    fitness = fitness(:,sortInd(1:truncationSize));
+    masterSeeds = sendSeeds(sortInd(1:truncationSize),:);
+    
+    parfor i = 1
+        % generate outputs of best network
+        bestNet = geneticRNN_rollout_model(policyInitFun, policyInitInputs, policyInitInputsOptional, allMutationPower, allDecay1, allDecay2, weightDecay, sendSeeds(sortInd(1),:));
+        % Run model
+        [Z0, Z1, R, dR, ~] = geneticRNN_run_model(bestNet, 'input', inp, 'targetFun', targetFun, 'targetFunPassthrough', targetFunPassthrough);
+        % Assess fitness
+        check = fitnessFun(bestNet.J, Z0, Z1, dR, fitnessFunInputs);
+        disp(mean(check))
+    end
+    disp(mean(fitness,1))
     
     %% Save stats
     errStats.fitness(:,end+1) = fitness(:,1);
     errStats.generation(end+1) = g;
     
-    
     %% Populate statistics for plotting function
     plotStats.fitness = fitness;
     plotStats.mutationPower = mutationPower;
     plotStats.generation = g;
-    plotStats.bigZ1 = bigZ1;
-    plotStats.bigR = bigR;
+    plotStats.bigZ1 = Z1;
+    plotStats.bigR = R;
     plotStats.targ = fitnessFunInputs;
     
     %% Run supplied plotting function
     if mod(g,evalOpts(2)) == 0
         plotFun(plotStats, errStats, evalOpts)
     end
-
-    previousGen = net(1:truncationSize);
-    mutationPower = mutationPower * mutationPowerDecay;
+    
+    if sortInd(1) == 1
+        mutationPower = mutationPower * mutationPowerDrop;
+    else
+        mutationPower = mutationPower * mutationPowerDecay;
+    end
     g = g + 1;
+    toc
 end
 
 
@@ -248,21 +260,16 @@ if ( nout >= 1 )
 end
 
 %% Save hard-earned elite network
-winner = previousGen(1);
+winner = bestNet;
 
 disp('Training time required:')
 toc
 
 
-%% Default output function
-    function [z, targetFeedforward] = defaultTargetFunction(~, r, ~, targetFeedforward)
-        z = r; % Just passes firing rate
-    end
-
 %% Default plotting function
     function defaultPlottingFunction(plotStats, errStats, evalOptions)
         if evalOptions(1) >= 0
-            disp(['Fitness: ' num2str(mean(plotStats.fitness(:,1))) '  Mutation Power: ' num2str(plotStats.mutationPower)])
+            disp(['Generation: ' num2str(plotStats.generation) '  Fitness: ' num2str(mean(plotStats.fitness(:,1))) '  Mutation Power: ' num2str(plotStats.mutationPower)])
         end
         if evalOptions(1) >= 1
             figure(98)
@@ -307,7 +314,6 @@ toc
     end
 
     function fitness = defaultFitnessFunction(J, Z0, Z1, dR, targ)
-        
         fitness = zeros(1,length(Z1));
         for cond = 1:length(Z1)
             ind = ~isnan(targ{cond});
@@ -323,5 +329,11 @@ toc
             
             fitness(cond) = -sum(err);
         end
+    end
+
+
+%% Default output function
+    function [z, targetFeedforward] = defaultTargetFunction(~, r, ~, targetFeedforward)
+        z = r; % Just passes firing rate
     end
 end
