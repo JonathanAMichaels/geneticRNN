@@ -66,9 +66,9 @@ evalOpts = [2 1]; % Plotting level and frequency of evaluation
 policyInitInputs = {N, B, I, p, g, dt, tau};
 policyInitInputsOptional = {'feedback', true, 'actFun', 'tanh'};
 
-mutationPower = 5e-2;
-populationSize = 2000;
-truncationSize = 100;
+mutationPower = 1e-2;
+populationSize = 5000;
+truncationSize = 10;
 fitnessFunInputs = targ;
 policyInitFun = @geneticRNN_create_model;
 
@@ -82,5 +82,5 @@ policyInitFun = @geneticRNN_create_model;
     'policyInitInputsOptional', policyInitInputsOptional);
 
 %% Run network
-[Z0, Z1, R, dR, X, kin] = geneticRNN_run_model(net(1), 'input', inp);
+[Z0, Z1, R, X, kin] = geneticRNN_run_model(net(1), 'input', inp);
 

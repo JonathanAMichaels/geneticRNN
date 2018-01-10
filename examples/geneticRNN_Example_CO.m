@@ -17,24 +17,24 @@ close all
 
 numConds = 8; % Number of peripheral targets. Try changing this number to alter the difficulty!
 totalTime = 70; % Total trial time
-moveTime = 30;
+moveTime = 70;
 L = [3 3]; % Length of each segment of the arm
 
 %% Populate target function passthrough data
 % This is information that the user can define and passthrough to the
 % network output function
 targetFunPassthrough.L = L;
-targetFunPassthrough.kinTimes = totalTime-moveTime-20:totalTime;
+targetFunPassthrough.kinTimes = 1:totalTime;
 
 %% General inputs and output
 inp = cell(1,numConds);
 targ = cell(1,numConds);
 ang = linspace(0, 2*pi - 2*pi/numConds, numConds);
-blankTime = 10;
+blankTime = 20;
 for cond = 1:numConds
     inp{cond} = zeros(numConds+1, totalTime);
     inp{cond}(cond,:) = 0.5;
-    inp{cond}(numConds+1,1:totalTime-moveTime-1) = 5;
+%    inp{cond}(numConds+1,1:totalTime-moveTime-1) = 5;
     targ{cond} = [[zeros(totalTime-moveTime,1); nan(blankTime,1); ones(moveTime-blankTime,1)]*sin(ang(cond)) ...
         [zeros(totalTime-moveTime,1); nan(blankTime,1); ones(moveTime-blankTime,1)]*cos(ang(cond))]';
 end
@@ -44,7 +44,7 @@ end
 % specified by the input.
 
 %% Initialize network parameters
-N = 100; % Number of neurons
+N = 200; % Number of neurons
 B = size(targ{1},1); % Outputs
 I = size(inp{1},1); % Inputs
 p = 1; % Sparsity
@@ -59,9 +59,9 @@ targetFun = @geneticRNN_COTargetFun; % handle of custom target function
 policyInitInputs = {N, B, I, p, g, dt, tau};
 policyInitInputsOptional = {'feedback', true, 'actFun', 'tanh', 'energyCost', 0.1};
 
-mutationPower = 5e-2;
-populationSize = 10;
-truncationSize = 5;
+mutationPower = 1e-2;
+populationSize = 5000;
+truncationSize = 50;
 fitnessFunInputs = targ;
 
 %% Train network
@@ -75,7 +75,7 @@ fitnessFunInputs = targ;
     'targetFun', targetFun, 'targetFunPassthrough', targetFunPassthrough);
 
 % run model
-[Z0, Z1, R, dR, X, kin] = geneticRNN_run_model(net, 'input', inp, 'targetFun', targetFun, 'targetFunPassthrough', targetFunPassthrough);
+[Z0, Z1, R, X, kin] = geneticRNN_run_model(net, 'input', inp, 'targetFun', targetFun, 'targetFunPassthrough', targetFunPassthrough);
 
 
 %% Plot center-out reaching results
@@ -99,7 +99,7 @@ for cond = 1:length(inp)
     for t = 1:length(targetFunPassthrough.kinTimes)-1
         clf
         for cond2 = 1:length(inp)
-            h(cond2) = filledCircle([targ{cond2}(1,1) targ{cond2}(2,1)], 0.2, 100, [0.9 0.9 0.9]);
+            h(cond2) = filledCircle([targ{cond2}(1,end) targ{cond2}(2,end)], 0.2, 100, [0.9 0.9 0.9]);
             h(cond2).EdgeColor = c(cond2,:);
             hold on
         end

@@ -5,11 +5,11 @@
             decay2Local = allDecay2(gen);
             if gen == 1
                 % Generate new network
-                rng(seeds(gen), 'twister')
+                rng(seeds(gen))
                 net = policyInitFunLocal(policyInitInputsLocal, policyInitInputsOptionalLocal);
             else
                 if ~isnan(seeds(gen))
-                    rng(seeds(gen), 'twister')
+                    rng(seeds(gen))
                     
                     net.wIn = (net.wIn + (randn(size(net.wIn)) * mutationPowerLocal .* (net.wIn ~= 0))) .* (decay1Local * ones(size(net.wIn)));
                     net.wFb = (net.wFb + (randn(size(net.wFb)) * mutationPowerLocal .* (net.wFb ~= 0))) .* (decay1Local * ones(size(net.wFb)));

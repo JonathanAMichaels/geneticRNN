@@ -20,7 +20,7 @@ if ismember(t,kinTimes)
     
     ang = zeros(1,length(r));
     for d = 1:length(r)
-        ang(d) = ang1(d) + r(d)/50;
+        ang(d) = ang1(d) + r(d)/10;
     end
     if ang(1) > pi/2*3
         ang(1) = pi/2*3;

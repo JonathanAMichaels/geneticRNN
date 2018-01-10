@@ -1,4 +1,4 @@
-function [Z0, Z1, R, dR, X, varargout] = geneticRNN_run_model(net, varargin)
+function [Z0, Z1, R, X, varargout] = geneticRNN_run_model(net, varargin)
 
 % net = hebbRNN_run_model(x0, net, F, varargin)
 %
@@ -102,12 +102,10 @@ tau = net.tau;
 dt_div_tau = dt/tau;
 netNoiseSigma = net.netNoiseSigma;
 actFun = net.actFun;
-actFunDeriv = net.actFunDeriv;
 
 Z1 = cell(1,length(condList));
 Z0 = cell(1,length(condList));
 R = cell(1,length(condList));
-dR = cell(1,length(condList));
 X = cell(1,length(condList));
 saveTarg = [];
 for cond = 1:length(condList)
@@ -121,14 +119,12 @@ for cond = 1:length(condList)
     allZ0 = zeros(niters,B);
     allZ1 = zeros(niters,B);
     allR = zeros(niters,N);
-    alldR = zeros(niters,N);
     allX = zeros(niters,N);
     
     x = x0;
     
     %% Activation function
     r = actFun(x);
-    dr = actFunDeriv(r);
     out = wOut*r + bOut;
     
     %% Calculate output using supplied function
@@ -144,7 +140,6 @@ for cond = 1:length(condList)
         allZ0(i,:) = out;
         allZ1(i,:) = z;
         allR(i,:) = r;
-        alldR(i,:) = dr;
         allX(i,:) = x;
         if i == niters
             saveTarg = targetFeedforward;
@@ -157,7 +152,6 @@ for cond = 1:length(condList)
         
         %% Activation function
         r = actFun(x);
-        dr = actFunDeriv(r);
         out = wOut*r + bOut;
         
         %% Calculate output using supplied function
@@ -167,7 +161,6 @@ for cond = 1:length(condList)
     Z0{cond} = allZ0';
     Z1{cond} = allZ1';
     R{cond} = allR';
-    dR{cond} = alldR';
     X{cond} = allX';
     if ~isempty(saveTarg)
         targetOut(cond) = saveTarg;
@@ -176,7 +169,7 @@ end
 
 
 %% Output error statistics if required
-if (nout >= 5)
+if (nout >= 4)
     if exist('targetOut', 'var')
         varargout{1} = targetOut;
     else

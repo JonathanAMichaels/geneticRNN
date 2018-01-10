@@ -1,16 +1,28 @@
-# geneticRNN: Implementation of simple genetic training algorithm for recurrent neural networks
+# geneticRNN: A simple genetic training algorithm for recurrent neural networks
 
 **Authors:** [Jonathan A. Michaels](http://www.jmichaels.me/)
 
 **Version:** 1.0
 
-**Date:** 09.01.2018
+**Date:** 10.01.2018
 
-## What is hebbRNN?
+## What is geneticRNN
 
-How does our brain learn to produce the large, impressive, and flexible array of motor behaviors we possess? In recent years, there has been renewed interest in modeling complex human behaviors such as memory and motor skills using neural networks. However, training these networks to produce meaningful behavior has proven difficult. Furthermore, the most common methods are generally not biologically-plausible and rely on information not local to the synapses of individual neurons as well as instantaneous reward signals.
+The current package is a Matlab implementation of a simple genetic training algorithm for recurrent neural networks. My algorithm is a very faithful implemetation of the algorithm layed out in this paper [Deep Neuroevolution: Genetic Algorithms Are a Competitive Alternative for Training Deep Neural Networks for Reinforcement Learning](https://arxiv.org/abs/1712.06567) as Algorithm 1.
 
-The current package is a Matlab implementation of a biologically-plausible training rule for recurrent neural networks using a delayed and sparse reward signal. On individual trials, input is perturbed randomly at the synapses of individual neurons and these potential weight changes are accumulated in a Hebbian manner (multiplying pre- and post-synaptic weights) in an eligibility trace. At the end of each trial, a reward signal is determined based on the overall performance of the network in achieving the desired goal, and this reward is compared to the expected reward. The difference between the observed and expected reward is used in combination with the eligibility trace to strengthen or weaken corresponding synapses within the network, leading to proper network performance over time.
+### Abstract of Such et al. (2018):
+
+Deep artificial neural networks (DNNs) are typically trained via gradient-based learning algorithms, namely backpropagation. Evolution strategies (ES) can rival backprop-based algorithms such as Q-learning and policy gradients on challenging deep reinforcement learning (RL) problems. However, ES can be considered a gradient-based algorithm because it performs stochastic gradient descent via an operation similar to a finite-difference approximation of the gradient. That raises the question of whether non-gradient-based evolutionary algorithms can work at DNN scales. Here we demonstrate they can: we evolve the weights of a DNN with a simple, gradient-free, population-based genetic algorithm (GA) and it performs well on hard deep RL problems, including Atari and humanoid locomotion. The Deep GA successfully evolves networks with over four million free parameters, the largest neural networks ever evolved with a traditional evolutionary algorithm. These results (1) expand our sense of the scale at which GAs can operate, (2) suggest intriguingly that in some cases following the gradient is not the best choice for optimizing performance, and (3) make immediately available the multitude of techniques that have been developed in the neuroevolution community to improve performance on RL problems. To demonstrate the latter, we show that combining DNNs with novelty search, which was designed to encourage exploration on tasks with deceptive or sparse reward functions, can solve a high-dimensional problem on which reward-maximizing algorithms (e.g. DQN, A3C, ES, and the GA) fail. Additionally, the Deep GA parallelizes better than ES, A3C, and DQN, and enables a state-of-the-art compact encoding technique that can represent million-parameter DNNs in thousands of bytes.
+
+### Notes:
+
+- I endeavored to make the package as flexible as possible, and therefore allows the user to pass many custom functions, including policy initialization, fitness, the physical plant, and plotting.
+
+- I have implemented the data compression technique outlined in the original paper. In brief, policies are not passed around to and from parallel workers or stored, but rather generated from a sequence of random number seeds. While this method slows down as a function of generations, it is overall much faster and more memory efficient than other possible implementations.
+
+- I added two regularizations that were not present in the original implementation and are optional:
+    - Policies are multiplied with a decay term to prevent variance explosion as a consequence of summing many normal distributions.
+    - A decay term is subtracted from the policy to bring unneeded weights closer to zero. The general effect is to produce a power law distribution of weights as opposed to normal.
 
 
 ## Documentation & Examples
@@ -28,7 +40,6 @@ In the center-out reaching task the network needs to produce the joint angle vel
 
 related file: geneticRNN_Example_CO.m
 
-
 ## Installation Instructions
 
 The code package runs in Matlab, and should be compatible with any version.
@@ -37,17 +48,3 @@ To install the package, simply add all folders and subfolders to the Matlab path
 ### Dependencies
 
 The geneticRNN repository has no dependencies beyond built-in Matlab functions.
-
-
-## Citation
-
-If used in published work, please cite the work as:
-
-Jonathan A. Michaels, Hansjörg Scherberger (2016). hebbRNN: A Reward-Modulated Hebbian Learning Rule for Recurrent Neural Networks. *The Journal of Open Source Software*. doi:[http://dx.doi.org/10.21105/joss.00060](http://dx.doi.org/10.21105/joss.00060)
-
-In addition, please cite the most recent version of the paper acknowledged below.
-
-
-## Acknowledgements
-
-The network training method used in hebbRNN is based on [Flexible decision ­making in recurrent neural networks trained with a biologically plausible rule](http://biorxiv.org/content/early/2016/07/26/057729) by [Thomas Miconi](http://scholar.harvard.edu/tmiconi/home).
