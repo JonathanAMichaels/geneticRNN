@@ -1,4 +1,4 @@
-function [z, targetFeedforward] = hebbRNN_centerOutTargetFunction(t, r, targetFunPassthrough, targetFeedforward)
+function [z, targetFeedforward] = geneticRNN_COTargetFun(t, r, targetFunPassthrough, targetFeedforward)
 
 L = targetFunPassthrough.L;
 kinTimes = targetFunPassthrough.kinTimes;
