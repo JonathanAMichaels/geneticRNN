@@ -53,7 +53,7 @@ N = 100; % Number of neurons
 B = size(targ{1},1); % Outputs
 I = size(inp{1},1); % Inputs
 p = 1; % Sparsity
-g = 1.2; % Spectral scaling
+g = 1.1; % Spectral scaling
 dt = 10; % Time step
 tau = 50; % Time constant
 
@@ -70,14 +70,13 @@ policyInitFun = @geneticRNN_create_model;
 evalOpts = [2 1]; % Plotting level and frequency of evaluation
 
 %% Train network
-% This step should take about 5 minutes, depending on your processor.
-% Should stopped at the desired time by pressing the STOP button and waiting for 1 iteration
+% This step should take less than 5 minutes on a 16 core machine.
+% Should be stopped at the desired time by pressing the STOP button and waiting for 1 iteration.
 % Look inside to see information about the many optional parameters.
-[net, learnStats] = geneticRNN_learn_model_2(mutationPower, populationSize, truncationSize, fitnessFunInputs, policyInitInputs, ...
+[net, learnStats] = geneticRNN_learn_model(inp, mutationPower, populationSize, truncationSize, fitnessFunInputs, policyInitInputs, ...
     'input', inp, ...
     'evalOpts', evalOpts, ...
     'policyInitInputsOptional', policyInitInputsOptional);
 
 %% Run network
-[Z0, Z1, R, X, kin] = geneticRNN_run_model(net, 'input', inp);
-
+[Z0, Z1, R, X, kin] = geneticRNN_run_model(net, inp);

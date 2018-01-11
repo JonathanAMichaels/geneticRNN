@@ -20,7 +20,7 @@ function net = geneticRNN_rollout_model(policyInitFunLocal, policyInitInputsLoca
 %
 % weightDecay -- Whether or not to perform weight decay (logical)
 %
-% seeds - Vector of random generator seeds to rollout
+% seeds -- Vector of random generator seeds to rollout
 %
 %
 % OUTPUTS:

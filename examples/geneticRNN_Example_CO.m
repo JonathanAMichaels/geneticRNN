@@ -58,10 +58,10 @@ fitnessFunInputs = targ; % Target data for fitness calculation
 evalOpts = [2 1]; % Plotting level and frequency of evaluation
 
 %% Train network
-% This step should take about 5 minutes, depending on your processor.
-% Should stopped at the desired time by pressing the STOP button and waiting for 1 iteration
+% This step should take less than 5 minutes on a 16 core machine.
+% Should be stopped at the desired time by pressing the STOP button and waiting for 1 iteration.
 % Look inside to see information about the many optional parameters.
-[net, learnStats] = geneticRNN_learn_model_2(inp, mutationPower, populationSize, truncationSize, fitnessFunInputs, policyInitInputs, ...
+[net, learnStats] = geneticRNN_learn_model(inp, mutationPower, populationSize, truncationSize, fitnessFunInputs, policyInitInputs, ...
     'evalOpts', evalOpts, ...
     'policyInitInputsOptional', policyInitInputsOptional, ...
     'targetFun', targetFun, 'targetFunPassthrough', targetFunPassthrough);
