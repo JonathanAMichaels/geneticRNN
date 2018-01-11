@@ -1,4 +1,4 @@
-function [winner, varargout] = geneticRNN_learn_model(mutationPower, populationSize, truncationSize, fitnessFunInputs, policyInitInputs, varargin)
+function [winner, varargout] = geneticRNN_learn_model(inp, mutationPower, populationSize, truncationSize, fitnessFunInputs, policyInitInputs, varargin)
 
 % net = hebbRNN_learn_model(x0, net, F, perturbProb, eta, varargin)
 %
@@ -113,7 +113,6 @@ nout = max(nargout,1)-1;
 % Variable input considerations
 optargin = size(varargin,2);
 
-inp = []; % Default inputs
 mutationPowerDecay = 0.99;
 mutationPowerDrop = 0.7;
 weightCompression = true;
@@ -127,11 +126,7 @@ targetFunPassthrough = []; % Default passthrough to output function
 evalOpts = [1 1]; % Default evaluation values [plottingOptions evaluateEveryXIterations]
 
 for iVar = 1:2:optargin
-    switch varargin{iVar}
-        
-        case 'input'
-            inp = varargin{iVar+1};
-            
+    switch varargin{iVar}            
         case 'mutationPowerDecay'
             mutationPowerDecay = varargin{iVar+1};
         case 'mutationPowerDrop'
@@ -177,68 +172,67 @@ allMutationPower = [];
 %% Main Program %%
 % Runs until tolerated error is met or stop button is pressed
 figure(97)
-set(gcf, 'Position', [0 20 100 50], 'MenuBar', 'none', 'ToolBar', 'none', 'Name', 'Stop', 'NumberTitle', 'off')
+set(gcf, 'Position', [0 50 100 50], 'MenuBar', 'none', 'ToolBar', 'none', 'Name', 'Stop', 'NumberTitle', 'off')
 UIButton = uicontrol('Style', 'togglebutton', 'String', 'STOP', 'Position', [0 0 100 50], 'FontSize', 25);
 while UIButton.Value == 0
-    
     tic
-    fitness = zeros(length(inp),populationSize);
-    
+    %% Initialize parameters
     if weightCompression
         decay1 = 1 - mutationPower;
     else
         decay1 = 1;
     end
     decay2 = mutationPower * 1e-1;
+    allDecay1 = cat(2, allDecay1, decay1);
+    allDecay2 = cat(2, allDecay2, decay2);
+    allMutationPower = cat(2, allMutationPower, mutationPower);
+    fitness = zeros(length(inp),populationSize);
     
+    %% Generate random seeds
     theseSeeds = randsample(1e8, populationSize);
     if g > 1
         previousSeeds = masterSeeds(randsample(size(masterSeeds,1), populationSize, true), :);
-        previousSeeds(1,:) = masterSeeds(1,:);
-        theseSeeds(1) = nan;
+        previousSeeds(1,:) = masterSeeds(1,:); % Save the elite!
+        theseSeeds(1) = nan; % Save the elite!
         sendSeeds = [previousSeeds, theseSeeds];
     else
         sendSeeds = theseSeeds;
     end
-    allDecay1 = cat(2, allDecay1, decay1);
-    allDecay2 = cat(2, allDecay2, decay2);
-    allMutationPower = cat(2, allMutationPower, mutationPower);
     
+    %% Heavy lifting
     parfor i = 1:populationSize
+        % Hack the random number generator
         stream = RandStream('mrg32k3a');
         RandStream.setGlobalStream(stream);
         stream.Substream = i;
-        
+        % Rollout the model based on the random seeds
         net = geneticRNN_rollout_model(policyInitFun, policyInitInputs, policyInitInputsOptional, allMutationPower, allDecay1, allDecay2, weightDecay, sendSeeds(i,:));
         % Run model
-        [~, Z1, ~, ~] = geneticRNN_run_model(net, 'input', inp, 'targetFun', targetFun, 'targetFunPassthrough', targetFunPassthrough);
+        [~, Z1, ~, ~] = geneticRNN_run_model(net, inp, 'targetFun', targetFun, 'targetFunPassthrough', targetFunPassthrough);
         % Assess fitness
         fitness(:,i) = fitnessFun(Z1, fitnessFunInputs);
     end
     
+    %% Sort and save best policies
     [~, sortInd] = sort(mean(fitness,1), 'descend');
     fitness = fitness(:,sortInd(1:truncationSize));
     masterSeeds = sendSeeds(sortInd(1:truncationSize),:);
     
-   sendSeeds = masterSeeds(1,:);
-   useInd = sortInd(1);
-   Z1 = cell(1,1);
-   R = cell(1,1);
-   check = cell(1,1);
-   net = cell(1,1);
-   parfor i = 1
-        stream = RandStream('mrg32k3a');
-        RandStream.setGlobalStream(stream);
-        stream.Substream = useInd;
-        
-        net{i} = geneticRNN_rollout_model(policyInitFun, policyInitInputs, policyInitInputsOptional, allMutationPower, allDecay1, allDecay2, weightDecay, sendSeeds);
-        % Run model
-        [~, Z1{i}, R{i}, ~] = geneticRNN_run_model(net{i}, 'input', inp, 'targetFun', targetFun, 'targetFunPassthrough', targetFunPassthrough);
-        % Assess fitness
-        check{i} = fitnessFun(Z1{i}, fitnessFunInputs);
-    end
+
+    %% Recalculate best network for plotting or output
+    % Hack the random number generator
+    stream = RandStream('mrg32k3a');
+    RandStream.setGlobalStream(stream);
+    stream.Substream = sortInd(1);
+    % Rollout the model based on the random seeds
+    net = geneticRNN_rollout_model(policyInitFun, policyInitInputs, policyInitInputsOptional, allMutationPower, allDecay1, allDecay2, weightDecay, masterSeeds(1,:));
+    % Run model
+    [~, Z1, R, ~] = geneticRNN_run_model(net, inp, 'targetFun', targetFun, 'targetFunPassthrough', targetFunPassthrough);
+    % Assess fitness
+    check = fitnessFun(Z1, fitnessFunInputs);
     
-    disp(mean(check{1}))
+    
+    disp(mean(check))
     disp(mean(fitness(:,1)))
     
     %% Save stats
@@ -249,8 +243,8 @@ while UIButton.Value == 0
     plotStats.fitness = fitness;
     plotStats.mutationPower = mutationPower;
     plotStats.generation = g;
-    plotStats.bigZ1 = Z1{1};
-    plotStats.bigR = R{1};
+    plotStats.bigZ1 = Z1;
+    plotStats.bigR = R;
     plotStats.targ = fitnessFunInputs;
     
     %% Run supplied plotting function
@@ -258,11 +252,13 @@ while UIButton.Value == 0
         plotFun(plotStats, errStats, evalOpts)
     end
     
+    %% Decay mutation power
     if sortInd(1) == 1
-        mutationPower = mutationPower * mutationPowerDrop;
+        mutationPower = mutationPower * mutationPowerDrop; % Big drop if we didn't learn anything
     else
-        mutationPower = mutationPower * mutationPowerDecay;
+        mutationPower = mutationPower * mutationPowerDecay; % Small drop if we learned something
     end
+    
     g = g + 1;
     toc
 end
@@ -274,7 +270,7 @@ if ( nout >= 1 )
 end
 
 %% Save hard-earned elite network
-winner = net{1};
+winner = net;
 
 disp('Training time required:')
 toc

@@ -1,6 +1,6 @@
 function net = geneticRNN_create_model(policyInitInputs, varargin)
 
-% net = geneticRNN_create_model(N, B, I, p, g, dt, tau, varargin)
+% net = geneticRNN_create_model(policyInitInputs, varargin)
 %
 % This function initializes a recurrent neural network for later training
 % and execution
@@ -17,9 +17,9 @@ function net = geneticRNN_create_model(policyInitInputs, varargin)
 %
 % g -- the spectral scaling of J
 %
-% dt - the integration time constant
+% dt -- the integration time constant
 %
-% tau - the time constant of each neuron
+% tau -- the time constant of each neuron
 %
 %
 % OPTIONAL INPUTS:
@@ -32,13 +32,8 @@ function net = geneticRNN_create_model(policyInitInputs, varargin)
 % point
 % Default: 0
 %
-% feedback -- whether or not to feed the output of the network back
+% feedback -- whether or not to feed the output of the plant back
 % Default: false
-%
-% energyCost -- how much to weight the firing rate of the output units in
-% the calculation of total error. This parameter encourages the network to
-% find solutions with as low firing rate as possible.
-% Default: 0
 %
 %
 % OUTPUTS:
@@ -66,7 +61,6 @@ end
 actFunType = 'tanh'; % Default activation function
 netNoiseSigma = 0.0; % Default noise-level
 feedback = false; % Default use of output feedback
-energyCost = 0; % Default weight of cost function
 optargin = size(varargin,2);
 
 for i = 1:2:optargin
@@ -76,9 +70,7 @@ for i = 1:2:optargin
         case 'netNoiseSigma'
             netNoiseSigma = varargin{i+1};
         case 'feedback'
-            feedback = varargin{i+1};
-        case 'energyCost'
-            energyCost = varargin{i+1};         
+            feedback = varargin{i+1};        
     end
 end
 
@@ -133,10 +125,8 @@ net.x0 = randn(N,1) / 1e6;
 switch actFunType
     case 'tanh'
         net.actFun = @tanh;
-        net.actFunDeriv = @(r) 1.0-r.^2;
     case 'recttanh'
         net.actFun = @(x) (x > 0) .* tanh(x);
-        net.actFunDeriv = @(r) (r > 0) .* (1.0 - r.^2);
     case 'baselinetanh' % Similar to Rajan et al. (2010)
         net.actFun = @(x) (x > 0) .* (1 - 0.1) .* tanh(x / (1 - 0.1)) ...
             + (x <= 0) .* 0.1 .* tanh(x / 0.1);
@@ -145,7 +135,4 @@ switch actFunType
     otherwise
         assert(false, 'Nope!');
 end
-
-%% Cost function
-net.energyCost = energyCost;
 end

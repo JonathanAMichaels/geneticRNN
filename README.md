@@ -6,7 +6,7 @@
 
 **Date:** 10.01.2018
 
-## What is geneticRNN
+## What is geneticRNN?
 
 The current package is a Matlab implementation of a simple genetic training algorithm for recurrent neural networks. My algorithm is a very faithful implemetation of the algorithm layed out in this paper [Deep Neuroevolution: Genetic Algorithms Are a Competitive Alternative for Training Deep Neural Networks for Reinforcement Learning](https://arxiv.org/abs/1712.06567) as Algorithm 1.
 
@@ -23,6 +23,8 @@ Deep artificial neural networks (DNNs) are typically trained via gradient-based 
 - I added two regularizations that were not present in the original implementation and are optional:
     - Policies are multiplied with a decay term to prevent variance explosion as a consequence of summing many normal distributions.
     - A decay term is subtracted from the policy to bring unneeded weights closer to zero. The general effect is to produce a power law distribution of weights as opposed to normal.
+
+- Mutation power decays automatically over generations and decays rapidly when no improved policy is found for a given generation.
 
 
 ## Documentation & Examples

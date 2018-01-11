@@ -1,23 +1,19 @@
-% hebbRNN_Example_CO
+% geneticRNN_Example_CO
 %
-% This function illustrates an example of reward-modulated Hebbian learning
+% This function illustrates an example of a simple genetic learning algorithm
 % in recurrent neural networks to complete a center-out reaching task.
 %
 %
-% Copyright (c) Jonathan A Michaels 2016
+% Copyright (c) Jonathan A Michaels 2018
 % German Primate Center
 % jonathanamichaels AT gmail DOT com
-%
-% If used in published work please see repository README.md for citation
-% and license information: https://github.com/JonathanAMichaels/hebbRNN
 
 
 clear
 close all
 
-numConds = 8; % Number of peripheral targets. Try changing this number to alter the difficulty!
-totalTime = 70; % Total trial time
-moveTime = 70;
+numConds = 4; % Number of peripheral targets. Try changing this number to alter the difficulty!
+totalTime = 40; % Total trial time
 L = [3 3]; % Length of each segment of the arm
 
 %% Populate target function passthrough data
@@ -30,13 +26,10 @@ targetFunPassthrough.kinTimes = 1:totalTime;
 inp = cell(1,numConds);
 targ = cell(1,numConds);
 ang = linspace(0, 2*pi - 2*pi/numConds, numConds);
-blankTime = 20;
 for cond = 1:numConds
-    inp{cond} = zeros(numConds+1, totalTime);
-    inp{cond}(cond,:) = 0.5;
-%    inp{cond}(numConds+1,1:totalTime-moveTime-1) = 5;
-    targ{cond} = [[zeros(totalTime-moveTime,1); nan(blankTime,1); ones(moveTime-blankTime,1)]*sin(ang(cond)) ...
-        [zeros(totalTime-moveTime,1); nan(blankTime,1); ones(moveTime-blankTime,1)]*cos(ang(cond))]';
+    inp{cond} = zeros(numConds, totalTime);
+    inp{cond}(cond,:) = 1;
+    targ{cond} = [ones(totalTime,1)*sin(ang(cond)) ones(totalTime,1)*cos(ang(cond))]';
 end
 % In the center-out reaching task the network needs to produce the joint angle
 % velocities of a two-segment arm to reach to a number of peripheral
@@ -44,38 +37,37 @@ end
 % specified by the input.
 
 %% Initialize network parameters
-N = 200; % Number of neurons
+N = 100; % Number of neurons
 B = size(targ{1},1); % Outputs
 I = size(inp{1},1); % Inputs
 p = 1; % Sparsity
 g = 1.1; % Spectral scaling
-dt = 1; % Time step
-tau = 10; % Time constant
+dt = 10; % Time step
+tau = 50; % Time constant
+
+%% Policy initialization parameters
+policyInitInputs = {N, B, I, p, g, dt, tau};
+policyInitInputsOptional = {'feedback', false};
 
 %% Initialize learning parameters
-evalOpts = [2 1]; % Plotting level and frequency of evaluation
 targetFun = @geneticRNN_COTargetFun; % handle of custom target function
-
-policyInitInputs = {N, B, I, p, g, dt, tau};
-policyInitInputsOptional = {'feedback', true, 'actFun', 'tanh', 'energyCost', 0.1};
-
-mutationPower = 1e-2;
-populationSize = 5000;
-truncationSize = 50;
-fitnessFunInputs = targ;
+mutationPower = 1e-2; % Standard deviation of normally distributed noise to add in each generation
+populationSize = 5000; % Number of individuals in each generation
+truncationSize = 50; % Number of individuals to save for next generation
+fitnessFunInputs = targ; % Target data for fitness calculation
+evalOpts = [2 1]; % Plotting level and frequency of evaluation
 
 %% Train network
 % This step should take about 5 minutes, depending on your processor.
-% Can be stopped at any time by pressing the STOP button.
+% Should stopped at the desired time by pressing the STOP button and waiting for 1 iteration
 % Look inside to see information about the many optional parameters.
-[net, learnStats] = geneticRNN_learn_model_2(mutationPower, populationSize, truncationSize, fitnessFunInputs, policyInitInputs, ...
-    'input', inp, ...
+[net, learnStats] = geneticRNN_learn_model_2(inp, mutationPower, populationSize, truncationSize, fitnessFunInputs, policyInitInputs, ...
     'evalOpts', evalOpts, ...
     'policyInitInputsOptional', policyInitInputsOptional, ...
     'targetFun', targetFun, 'targetFunPassthrough', targetFunPassthrough);
 
 % run model
-[Z0, Z1, R, X, kin] = geneticRNN_run_model(net, 'input', inp, 'targetFun', targetFun, 'targetFunPassthrough', targetFunPassthrough);
+[Z0, Z1, R, X, kin] = geneticRNN_run_model(net, inp, 'targetFun', targetFun, 'targetFunPassthrough', targetFunPassthrough);
 
 
 %% Plot center-out reaching results

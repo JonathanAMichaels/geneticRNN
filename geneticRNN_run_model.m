@@ -1,55 +1,34 @@
-function [Z0, Z1, R, X, varargout] = geneticRNN_run_model(net, varargin)
+function [Z0, Z1, R, X, varargout] = geneticRNN_run_model(net, inp, varargin)
 
-% net = hebbRNN_run_model(x0, net, F, varargin)
+% [Z0, Z1, R, X, varargout] = geneticRNN_run_model(net, inp, varargin)
 %
-% This function runs the network structure (net) initialized by
-% hebbRNN_create_model and trained by hebbRNN_learn_model with the desired
-% input.
-% NOTE: Networks must have been trained by hebbRNN_learn_model in order to be run
-% by this function
+% This function runs the network structure (net)
 %
 %
 % INPUTS:
 %
-% x0 -- the initial activation (t == 0) of all neurons
-% Must be of size: net.N x 1
+% net -- The network structure created by geneticRNN_create_model
 %
-% net -- the network structure created by hebbRNN_create_model
-%
-% F -- the desired output
-% Must be a cell of size: 1 x conditions
-% Each cell must be of size: net.B x time points
-%
-%
-% OPTIONAL INPUTS:
-%
-% input -- the input to the network
-% Must be a cell of size: 1 x conditions
-% Each cell must be of size: net.I x time points
-% Default: []
+% inp -- Inputs to the network. Must be present, but can be empty.
 %
 %
 % OUTPUTS:
 %
-% Z -- the output of the network
+% Z0 -- the output of the network
 %
-% R -- the firing rate of all neurons in the network
+% Z1 -- The output of the plant. This is only different from Z0 if a custom target function is supplied
 %
-% X -- the activation of all neurons in the network
+% R -- The firing rate of all neurons in the network
 %
-% errStats -- the structure containing error information from learning
-% (optional)
+% X -- The activation of all neurons in the network
 %
 % targetOut -- structure containing the output produced by targetFun
 % (optional)
 %
 %
-% Copyright (c) Jonathan A Michaels 2016
+% Copyright (c) Jonathan A Michaels 2018
 % German Primate Center
 % jonathanamichaels AT gmail DOT com
-%
-% If used in published work please see repository README.md for citation
-% and license information: https://github.com/JonathanAMichaels/hebbRNN
 
 
 % Variable output considerations
@@ -58,17 +37,10 @@ nout = max(nargout,1)-1;
 % Variable input considerations
 optargin = size(varargin,2);
 
-inp = [];
-niters = [];
 targetFun = @defaultTargetFunction;
 targetFunPassthrough = [];
 for iVar = 1:2:optargin
     switch varargin{iVar}
-        case 'input'
-            inp = varargin{iVar+1};
-        case 'niters'
-            niters = varargin{iVar+1};
-            
         case 'targetFun'
             targetFun = varargin{iVar+1};
         case'targetFunPassthrough'
@@ -80,15 +52,8 @@ N = net.N;
 B = net.B;
 I = net.I;
 
-% The input can be either empty, or specified at each time point by the user.
-hasInput = ~isempty(inp);
-if (hasInput)
-    assert(size(inp{1},1) == I, 'There must be an input entry for each input vector.');
-    condList = 1:length(inp);
-else
-    assert(~isempty(niters), 'If no input is present the number of timepoints must be specified')
-    condList = 1;
-end
+assert(size(inp{1},1) == I, 'There must be an input entry for each input vector.');
+condList = 1:length(inp);
 
 J = net.J;
 wIn = net.wIn;
@@ -110,10 +75,8 @@ X = cell(1,length(condList));
 saveTarg = [];
 for cond = 1:length(condList)
     thisCond = condList(cond);
-    if hasInput
-        thisInp = inp{thisCond};
-        niters = size(thisInp,2);
-    end
+    thisInp = inp{thisCond};
+    niters = size(thisInp,2);
     targetFeedforward = [];
     
     allZ0 = zeros(niters,B);
@@ -125,17 +88,14 @@ for cond = 1:length(condList)
     
     %% Activation function
     r = actFun(x);
+    %% Output
     out = wOut*r + bOut;
     
     %% Calculate output using supplied function
     [z, targetFeedforward] = targetFun(0, out, targetFunPassthrough, targetFeedforward);
 
     for i = 1:niters
-        if (hasInput)
-            input = wIn*thisInp(:,i);
-        else
-            input = 0;
-        end
+        input = wIn*thisInp(:,i);
         
         allZ0(i,:) = out;
         allZ1(i,:) = z;
@@ -147,11 +107,13 @@ for cond = 1:length(condList)
         
         %% Calculate change in activation
         excitation = -x + J*r + input + wFb*z + bJ + netNoiseSigma*randn(N,1);
+        
         %% Add all activation changes together
         x = x + dt_div_tau*excitation;
         
         %% Activation function
         r = actFun(x);
+        %% Output
         out = wOut*r + bOut;
         
         %% Calculate output using supplied function
@@ -166,7 +128,6 @@ for cond = 1:length(condList)
         targetOut(cond) = saveTarg;
     end
 end
-
 
 %% Output error statistics if required
 if (nout >= 4)
