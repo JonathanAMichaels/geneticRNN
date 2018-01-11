@@ -27,7 +27,7 @@ function [Z0, Z1, R, X, varargout] = geneticRNN_run_model(net, inp, varargin)
 %
 %
 % Copyright (c) Jonathan A Michaels 2018
-% German Primate Center
+% Stanford University
 % jonathanamichaels AT gmail DOT com
 
 

@@ -6,7 +6,7 @@
 %
 %
 % Copyright (c) Jonathan A Michaels 2018
-% German Primate Center
+% Stanford University
 % jonathanamichaels AT gmail DOT com
 
 
