@@ -85,6 +85,7 @@ mutationPowerDecay = 0.99;
 mutationPowerDrop = 0.7;
 weightCompression = true; % By default we will compress
 weightDecay = false; % By default we won't use decay
+weightDecayAmount = 1e-2;
 targetFun = @defaultTargetFunction; % Default output function (native)
 plotFun = @defaultPlottingFunction; % Default plotting function (native)
 fitnessFun = @defaultFitnessFunction; % Default fitness function (native)
@@ -104,6 +105,8 @@ for iVar = 1:2:optargin
             weightCompression = varargin{iVar+1};
         case 'weightDecay'
             weightDecay = varargin{iVar+1};
+        case 'weightDecayAmount'
+            weightDecayAmount = varargin{iVar+1};
             
         case 'fitnessFun'
             fitnessFun = varargin{iVar+1};
@@ -141,7 +144,7 @@ while UIButton.Value == 0
     else
         decay1 = 1;
     end
-    decay2 = mutationPower * 1e-1;
+    decay2 = mutationPower * weightDecayAmount;
     allDecay1 = cat(2, allDecay1, decay1);
     allDecay2 = cat(2, allDecay2, decay2);
     allMutationPower = cat(2, allMutationPower, mutationPower);

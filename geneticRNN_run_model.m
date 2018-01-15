@@ -92,6 +92,7 @@ for cond = 1:length(condList)
     out = wOut*r + bOut;
     
     %% Calculate output using supplied function
+    targetFunPassthrough.cond = cond;
     [z, targetFeedforward] = targetFun(0, out, targetFunPassthrough, targetFeedforward);
 
     for i = 1:niters

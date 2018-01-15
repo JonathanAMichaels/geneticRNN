@@ -49,7 +49,7 @@ end
 % network to remember the first input!
 
 %% Initialize network parameters
-N = 100; % Number of neurons
+N = 50; % Number of neurons
 B = size(targ{1},1); % Outputs
 I = size(inp{1},1); % Inputs
 p = 1; % Sparsity
@@ -63,8 +63,8 @@ policyInitInputsOptional = {'feedback', true};
 
 %% Initialize learning parameters
 mutationPower = 1e-2; % Standard deviation of normally distributed noise to add in each generation
-populationSize = 5000; % Number of individuals in each generation
-truncationSize = 100; % Number of individuals to save for next generation
+populationSize = 2000; % Number of individuals in each generation
+truncationSize = 20; % Number of individuals to save for next generation
 fitnessFunInputs = targ; % Target data for fitness calculation
 policyInitFun = @geneticRNN_create_model;
 evalOpts = [2 1]; % Plotting level and frequency of evaluation
